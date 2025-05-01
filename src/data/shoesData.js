@@ -194,7 +194,7 @@ const initialShoeData = [
       { size: 11, quantity: 2 },
       { size: 12, quantity: 1 },
     ],
-    image: "https://images.unsplash.com/photo-1614252235316-8c857f814600?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bG9hZmVyc3xlbnwwfHwwfHx8MA%3D%3D",
+    image: "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZHJlc3MlMjBzaG9lc3xlbnwwfHwwfHx8MA%3D%3D",
     color: "Burgundy",
     brand: "Gucci",
     category: "Formal"
@@ -212,7 +212,7 @@ const initialShoeData = [
       { size: 10, quantity: 2 },
       { size: 11, quantity: 2 },
     ],
-    image: "https://images.unsplash.com/photo-1585591359088-e144e8689e1f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZWNvJTIwc2hvZXN8ZW58MHx8MHx8fDA%3D",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvZXN8ZW58MHx8MHx8fDA%3D",
     color: "Natural/Green",
     brand: "Allbirds",
     category: "Casual"

@@ -1,37 +1,33 @@
 // src/components/store/ShoeCard.jsx
 import { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { calculateTotalQuantity, useShoeStore } from '../../data/shoesData';
 
 const ShoeCard = ({ shoe }) => {
-  const [selectedSize, setSelectedSize] = useState(shoe.sizeInventory[0]?.size || 0);
+  const [selectedSize, setSelectedSize] = useState(shoe.sizeInventory[0]?.size || shoe.sizes[0]);
   const [isHovered, setIsHovered] = useState(false);
   const { addToCart } = useCart();
-  const { getSizeQuantity, getAvailableSizes } = useShoeStore();
   
   // Calculate total quantity for display
-  const totalQuantity = calculateTotalQuantity(shoe);
+  const totalQuantity = shoe.sizeInventory.reduce((total, item) => total + item.quantity, 0);
   
-  // Get quantity for the selected size
-  const selectedSizeQuantity = getSizeQuantity(shoe.id, selectedSize);
-  
-  // Get available sizes (for keyboard navigation and accessibility)
-  const availableSizes = getAvailableSizes(shoe.id);
-
-  // Determine stock status for the badge display
-  const getStockStatusInfo = (quantity) => {
-    if (quantity === 0) return { text: "Out of Stock", bgColor: "bg-red-100 text-red-800" };
-    if (quantity <= 5) return { text: `${quantity} in stock`, bgColor: "bg-yellow-100 text-yellow-800" };
-    return { text: `${quantity} in stock`, bgColor: "bg-green-100 text-green-800" };
-  };
-  
-  const stockStatus = getStockStatusInfo(totalQuantity);
+  // Get current selected size inventory
+  const selectedSizeItem = shoe.sizeInventory.find(item => item.size === selectedSize);
+  const selectedSizeQuantity = selectedSizeItem ? selectedSizeItem.quantity : 0;
   
   // Handle image errors
   const handleImageError = (e) => {
     e.target.onerror = null;
     e.target.src = `https://via.placeholder.com/300x200?text=${shoe.name.replace(/ /g, '+')}`;
   };
+  
+  // Stock status badge style
+  const getStockBadge = () => {
+    if (totalQuantity === 0) return { text: "Out of Stock", bgColor: "bg-red-100 text-red-800" };
+    if (totalQuantity <= 5) return { text: `${totalQuantity} left`, bgColor: "bg-yellow-100 text-yellow-800" };
+    return { text: `In Stock`, bgColor: "bg-green-100 text-green-800" };
+  };
+  
+  const stockBadge = getStockBadge();
   
   return (
     <div 
@@ -47,15 +43,14 @@ const ShoeCard = ({ shoe }) => {
           onError={handleImageError}
         />
         
-        {/* Main stock badge - machine-readable for bots */}
+        {/* Stock badge with machine-readable data attributes */}
         <div className="absolute top-2 right-2">
           <span 
-            className={`px-2 py-1 rounded-full text-xs font-bold ${stockStatus.bgColor}`}
+            className={`px-2 py-1 rounded-full text-xs font-bold ${stockBadge.bgColor}`}
             id={`stock-${shoe.id}`}
-            data-shoe-id={shoe.id}
             data-total-quantity={totalQuantity}
           >
-            {stockStatus.text}
+            {stockBadge.text}
           </span>
         </div>
 
@@ -92,7 +87,7 @@ const ShoeCard = ({ shoe }) => {
           </span>
         </div>
         
-        {/* Size Selection with Inventory Info */}
+        {/* Size Selection - Fixed to allow selection */}
         <div className="mt-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Size:</label>
           <div className="flex flex-wrap gap-2">
@@ -103,29 +98,21 @@ const ShoeCard = ({ shoe }) => {
               return (
                 <button
                   key={sizeItem.size}
-                  className={`relative px-3 py-1 text-sm rounded-md
-                    ${isSelected
-                      ? isAvailable 
-                        ? 'bg-gray-900 text-white' 
-                        : 'bg-gray-400 text-white cursor-not-allowed'
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    isSelected
+                      ? 'bg-gray-900 text-white'
                       : isAvailable
                         ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                  onClick={() => isAvailable && setSelectedSize(sizeItem.size)}
-                  disabled={!isAvailable}
-                  aria-label={`Size ${sizeItem.size}${isAvailable ? '' : ' - Out of stock'}`}
+                        : 'bg-gray-100 text-gray-400'
+                  }`}
+                  onClick={() => setSelectedSize(sizeItem.size)}
                   data-size={sizeItem.size}
                   data-quantity={sizeItem.quantity}
-                  id={`size-${shoe.id}-${sizeItem.size}`}
                 >
                   {sizeItem.size}
                   {isAvailable && (
-                    <span 
-                      className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-xs text-gray-700 border border-white"
-                      title={`${sizeItem.quantity} in stock`}
-                    >
-                      {sizeItem.quantity}
+                    <span className="ml-1 text-xs">
+                      ({sizeItem.quantity})
                     </span>
                   )}
                 </button>
@@ -134,50 +121,41 @@ const ShoeCard = ({ shoe }) => {
           </div>
         </div>
         
-        {/* Size-specific inventory status */}
-        {selectedSize > 0 && (
-          <div className="mt-2 text-sm">
-            <span className="text-gray-600">
-              Selected size {selectedSize}: 
-              <span className={`ml-1 font-medium ${
-                selectedSizeQuantity > 5 
-                  ? 'text-green-600' 
-                  : selectedSizeQuantity > 0 
-                    ? 'text-yellow-600' 
-                    : 'text-red-600'
-              }`}>
-                {selectedSizeQuantity > 0 
-                  ? `${selectedSizeQuantity} in stock` 
-                  : 'Out of stock'}
-              </span>
-            </span>
+        {/* Simple size quantity display */}
+        {selectedSize && (
+          <div className="mt-2 text-sm text-gray-600">
+            {selectedSizeQuantity > 0 
+              ? `Size ${selectedSize}: ${selectedSizeQuantity} in stock` 
+              : `Size ${selectedSize}: Out of stock`}
           </div>
         )}
         
-        {/* Machine-readable inventory data for bot crawling */}
+        {/* Machine-readable data for crawling - simplified */}
         <div 
-          className="hidden" 
-          id={`inventory-data-${shoe.id}`}
-          data-shoe-id={shoe.id}
-          data-shoe-name={shoe.name}
+          id={`inventory-data-${shoe.id}`} 
+          className="hidden"
+          data-product-id={shoe.id}
+          data-product-name={shoe.name}
+          data-product-brand={shoe.brand}
+          data-product-category={shoe.category}
           data-total-quantity={totalQuantity}
-          data-available-sizes={JSON.stringify(availableSizes)}
-          data-all-inventory={JSON.stringify(shoe.sizeInventory)}
-        >
-          {/* This hidden div contains structured data for bots to crawl */}
-        </div>
+          data-inventory={JSON.stringify(shoe.sizeInventory)}
+        ></div>
       </div>
       
+      {/* Fixed hover gradient and button */}
       {isHovered && totalQuantity > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 p-4">
+        <div className="absolute bottom-0 left-0 right-0 py-4 px-4 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent">
           <button 
-            className="w-full bg-indigo-600 text-white py-2 rounded-md font-medium hover:bg-indigo-700 transition-colors"
-            onClick={() => addToCart(shoe, selectedSize)}
+            className={`w-full py-2 rounded-md font-medium ${
+              selectedSizeQuantity > 0
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-gray-400 text-white cursor-not-allowed'
+            }`}
+            onClick={() => selectedSizeQuantity > 0 && addToCart(shoe, selectedSize)}
             disabled={selectedSizeQuantity === 0}
           >
-            {selectedSizeQuantity > 0 
-              ? 'Add to Cart' 
-              : 'Size Unavailable'}
+            {selectedSizeQuantity > 0 ? 'Add to Cart' : 'Size Out of Stock'}
           </button>
         </div>
       )}
