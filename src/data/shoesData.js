@@ -194,7 +194,7 @@ const initialShoeData = [
       { size: 11, quantity: 2 },
       { size: 12, quantity: 1 },
     ],
-    image: "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZHJlc3MlMjBzaG9lc3xlbnwwfHwwfHx8MA%3D%3D",
+    image: "https://images.unsplash.com/photo-1614252235316-8c857f814600?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bG9hZmVyc3xlbnwwfHwwfHx8MA%3D%3D",
     color: "Burgundy",
     brand: "Gucci",
     category: "Formal"
@@ -212,7 +212,7 @@ const initialShoeData = [
       { size: 10, quantity: 2 },
       { size: 11, quantity: 2 },
     ],
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvZXN8ZW58MHx8MHx8fDA%3D",
+    image: "https://images.unsplash.com/photo-1585591359088-e144e8689e1f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZWNvJTIwc2hvZXN8ZW58MHx8MHx8fDA%3D",
     color: "Natural/Green",
     brand: "Allbirds",
     category: "Casual"
@@ -224,22 +224,27 @@ const getTotalQuantity = (sizeInventory) => {
   return sizeInventory.reduce((total, item) => total + item.quantity, 0);
 };
 
+// Get product URL helper
+export const getProductUrl = (shoeId, size) => {
+  return `/product/${shoeId}${size ? `?size=${size}` : ''}`;
+};
+
 // Create a store to manage the shoe inventory
 export const useShoeStore = create((set, get) => ({
   shoes: initialShoeData,
   
   // Get total quantity for a specific shoe
   getTotalQuantity: (shoeId) => {
-    const shoe = get().shoes.find(s => s.id === shoeId);
+    const shoe = get().shoes.find(s => s.id === parseInt(shoeId));
     return shoe ? getTotalQuantity(shoe.sizeInventory) : 0;
   },
   
   // Get quantity for a specific shoe and size
   getSizeQuantity: (shoeId, size) => {
-    const shoe = get().shoes.find(s => s.id === shoeId);
+    const shoe = get().shoes.find(s => s.id === parseInt(shoeId));
     if (!shoe) return 0;
     
-    const sizeItem = shoe.sizeInventory.find(s => s.size === size);
+    const sizeItem = shoe.sizeInventory.find(s => s.size === parseInt(size));
     return sizeItem ? sizeItem.quantity : 0;
   },
   
@@ -252,11 +257,11 @@ export const useShoeStore = create((set, get) => ({
   updateQuantity: (shoeId, size, quantityToRemove) => {
     set((state) => ({
       shoes: state.shoes.map(shoe => 
-        shoe.id === shoeId 
+        shoe.id === parseInt(shoeId) 
           ? {
               ...shoe,
               sizeInventory: shoe.sizeInventory.map(sizeItem => 
-                sizeItem.size === size
+                sizeItem.size === parseInt(size)
                   ? { ...sizeItem, quantity: Math.max(0, sizeItem.quantity - quantityToRemove) }
                   : sizeItem
               )
@@ -266,14 +271,9 @@ export const useShoeStore = create((set, get) => ({
     }));
   },
   
-  // Reset inventory to initial state (for demo purposes)
-  resetInventory: () => {
-    set({ shoes: initialShoeData });
-  },
-  
   // Get all available sizes for a shoe
   getAvailableSizes: (shoeId) => {
-    const shoe = get().shoes.find(s => s.id === shoeId);
+    const shoe = get().shoes.find(s => s.id === parseInt(shoeId));
     if (!shoe) return [];
     
     return shoe.sizeInventory
@@ -283,28 +283,61 @@ export const useShoeStore = create((set, get) => ({
   
   // Get all sizes (regardless of availability) for a shoe
   getAllSizes: (shoeId) => {
-    const shoe = get().shoes.find(s => s.id === shoeId);
+    const shoe = get().shoes.find(s => s.id === parseInt(shoeId));
     if (!shoe) return [];
     
     return shoe.sizeInventory.map(sizeItem => sizeItem.size);
+  },
+  
+  // Get a shoe by id
+  getShoe: (shoeId) => {
+    return get().shoes.find(s => s.id === parseInt(shoeId)) || null;
+  },
+  
+  // Find shoes by brand
+  getShoesByBrand: (brand) => {
+    return get().shoes.filter(s => 
+      s.brand.toLowerCase().includes(brand.toLowerCase())
+    );
+  },
+  
+  // Find shoes by category
+  getShoesByCategory: (category) => {
+    return get().shoes.filter(s => 
+      s.category.toLowerCase().includes(category.toLowerCase())
+    );
+  },
+  
+  // Search shoes by name
+  searchShoesByName: (query) => {
+    if (!query) return [];
+    return get().shoes.filter(s => 
+      s.name.toLowerCase().includes(query.toLowerCase())
+    );
+  },
+  
+  // Find eco-friendly shoes
+  getEcoFriendlyShoes: () => {
+    return get().shoes.filter(s => 
+      s.name.toLowerCase().includes('eco') || 
+      s.description.toLowerCase().includes('eco') ||
+      s.description.toLowerCase().includes('sustainable') ||
+      s.description.toLowerCase().includes('recycled')
+    );
   }
 }));
 
-// Helper function to calculate total quantity
+// Helper to calculate total quantity
 export const calculateTotalQuantity = (shoe) => {
   return getTotalQuantity(shoe.sizeInventory);
 };
 
-// Backward compatibility - for components that expect "sizes" and "quantity" properties
-export const getProcessedShoeData = () => {
-  return initialShoeData.map(shoe => ({
-    ...shoe,
-    sizes: shoe.sizeInventory.map(item => item.size),
-    quantity: getTotalQuantity(shoe.sizeInventory)
-  }));
-};
-
-export const shoesData = getProcessedShoeData();
+// For compatibility with existing components
+export const shoesData = initialShoeData.map(shoe => ({
+  ...shoe,
+  sizes: shoe.sizeInventory.map(item => item.size),
+  quantity: getTotalQuantity(shoe.sizeInventory)
+}));
 
 // For sales data (dashboard)
 export const salesData = {

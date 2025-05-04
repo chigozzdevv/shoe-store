@@ -1,6 +1,8 @@
 // src/components/store/ShoeCard.jsx
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { getProductUrl } from '../../data/shoesData';
 
 const ShoeCard = ({ shoe }) => {
   const [selectedSize, setSelectedSize] = useState(shoe.sizeInventory[0]?.size || shoe.sizes[0]);
@@ -48,6 +50,7 @@ const ShoeCard = ({ shoe }) => {
           <span 
             className={`px-2 py-1 rounded-full text-xs font-bold ${stockBadge.bgColor}`}
             id={`stock-${shoe.id}`}
+            data-shoe-id={shoe.id}
             data-total-quantity={totalQuantity}
           >
             {stockBadge.text}
@@ -87,50 +90,46 @@ const ShoeCard = ({ shoe }) => {
           </span>
         </div>
         
-        {/* Size Selection - Fixed to allow selection */}
+        {/* Size Selection */}
         <div className="mt-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Size:</label>
           <div className="flex flex-wrap gap-2">
-            {shoe.sizeInventory.map(sizeItem => {
-              const isAvailable = sizeItem.quantity > 0;
-              const isSelected = selectedSize === sizeItem.size;
-              
-              return (
-                <button
-                  key={sizeItem.size}
-                  className={`px-3 py-1 text-sm rounded-md ${
-                    isSelected
-                      ? 'bg-gray-900 text-white'
-                      : isAvailable
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        : 'bg-gray-100 text-gray-400'
-                  }`}
-                  onClick={() => setSelectedSize(sizeItem.size)}
-                  data-size={sizeItem.size}
-                  data-quantity={sizeItem.quantity}
-                >
-                  {sizeItem.size}
-                  {isAvailable && (
-                    <span className="ml-1 text-xs">
-                      ({sizeItem.quantity})
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {shoe.sizeInventory.map(sizeItem => (
+              <button
+                key={sizeItem.size}
+                className={`px-3 py-1 text-sm rounded-md ${
+                  selectedSize === sizeItem.size
+                    ? 'bg-gray-900 text-white'
+                    : sizeItem.quantity > 0
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      : 'bg-gray-100 text-gray-400'
+                }`}
+                onClick={() => setSelectedSize(sizeItem.size)}
+                data-size={sizeItem.size}
+                data-quantity={sizeItem.quantity}
+              >
+                {sizeItem.size}
+                {sizeItem.quantity > 0 && (
+                  <span className="ml-1 text-xs">
+                    ({sizeItem.quantity})
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
         
-        {/* Simple size quantity display */}
-        {selectedSize && (
-          <div className="mt-2 text-sm text-gray-600">
-            {selectedSizeQuantity > 0 
-              ? `Size ${selectedSize}: ${selectedSizeQuantity} in stock` 
-              : `Size ${selectedSize}: Out of stock`}
-          </div>
-        )}
+        {/* View Product Link - Direct link to product page with selected size */}
+        <div className="mt-4">
+          <Link 
+            to={getProductUrl(shoe.id, selectedSize)}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+          >
+            View Details
+          </Link>
+        </div>
         
-        {/* Machine-readable data for crawling - simplified */}
+        {/* Machine-readable data for chatbot crawling */}
         <div 
           id={`inventory-data-${shoe.id}`} 
           className="hidden"
@@ -141,9 +140,42 @@ const ShoeCard = ({ shoe }) => {
           data-total-quantity={totalQuantity}
           data-inventory={JSON.stringify(shoe.sizeInventory)}
         ></div>
+        
+        {/* Structured Data for SEO and chatbots */}
+        <script 
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              "name": shoe.name,
+              "description": shoe.description,
+              "brand": {
+                "@type": "Brand",
+                "name": shoe.brand
+              },
+              "color": shoe.color,
+              "category": shoe.category,
+              "offers": shoe.sizeInventory.map(item => ({
+                "@type": "Offer",
+                "availability": item.quantity > 0 
+                  ? "https://schema.org/InStock" 
+                  : "https://schema.org/OutOfStock",
+                "itemCondition": "https://schema.org/NewCondition",
+                "price": shoe.price,
+                "priceCurrency": "USD",
+                "size": item.size,
+                "inventoryLevel": {
+                  "@type": "QuantitativeValue",
+                  "value": item.quantity
+                }
+              }))
+            })
+          }}
+        />
       </div>
       
-      {/* Fixed hover gradient and button */}
+      {/* Add to Cart Button on Hover */}
       {isHovered && totalQuantity > 0 && (
         <div className="absolute bottom-0 left-0 right-0 py-4 px-4 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent">
           <button 
