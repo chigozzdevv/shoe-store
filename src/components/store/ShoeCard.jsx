@@ -119,14 +119,30 @@ const ShoeCard = ({ shoe }) => {
           </div>
         </div>
         
-        {/* View Product Link - Direct link to product page with selected size */}
-        <div className="mt-4">
+        {/* Product Actions Container - Combine View Details and Add to Cart */}
+        <div className="mt-4 flex items-center justify-between">
+          {/* View Product Link - Direct link to product page with selected size */}
           <Link 
             to={getProductUrl(shoe.id, selectedSize)}
-            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium relative z-10"
           >
             View Details
           </Link>
+          
+          {/* Add to Cart Button - Always visible but styled differently */}
+          {totalQuantity > 0 && (
+            <button 
+              className={`px-4 py-1 rounded-md text-sm font-medium ${
+                selectedSizeQuantity > 0
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-gray-400 text-white cursor-not-allowed'
+              }`}
+              onClick={() => selectedSizeQuantity > 0 && addToCart(shoe, selectedSize)}
+              disabled={selectedSizeQuantity === 0}
+            >
+              {selectedSizeQuantity > 0 ? 'Add to Cart' : 'Size Out of Stock'}
+            </button>
+          )}
         </div>
         
         {/* Machine-readable data for chatbot crawling */}
@@ -175,22 +191,7 @@ const ShoeCard = ({ shoe }) => {
         />
       </div>
       
-      {/* Add to Cart Button on Hover */}
-      {isHovered && totalQuantity > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 py-4 px-4 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent">
-          <button 
-            className={`w-full py-2 rounded-md font-medium ${
-              selectedSizeQuantity > 0
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                : 'bg-gray-400 text-white cursor-not-allowed'
-            }`}
-            onClick={() => selectedSizeQuantity > 0 && addToCart(shoe, selectedSize)}
-            disabled={selectedSizeQuantity === 0}
-          >
-            {selectedSizeQuantity > 0 ? 'Add to Cart' : 'Size Out of Stock'}
-          </button>
-        </div>
-      )}
+      {/* Remove the hovering Add to Cart button that was causing the issue */}
     </div>
   );
 };
